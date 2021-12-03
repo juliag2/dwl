@@ -206,6 +206,7 @@ struct render_data {
 	struct wlr_output *output;
 	struct timespec *when;
 	int x, y; /* layout-relative */
+	float alpha;
 };
 
 /* function declarations */
@@ -1647,7 +1648,7 @@ render(struct wlr_surface *surface, int sx, int sy, void *data)
 
 	/* This takes our matrix, the texture, and an alpha, and performs the actual
 	 * rendering on the GPU. */
-	wlr_render_texture_with_matrix(drw, texture, matrix, 1);
+	wlr_render_texture_with_matrix(drw, texture, matrix, rdata->alpha);
 
 	/* This lets the client know that we've displayed that frame and it can
 	 * prepare another one now if it likes. */
@@ -1704,6 +1705,7 @@ renderclients(Monitor *m, struct timespec *now)
 		rdata.when = now;
 		rdata.x = c->geom.x + c->bw;
 		rdata.y = c->geom.y + c->bw;
+		rdata.alpha = (c == sel) ? focussedalpha : unfocussedalpha;
 		client_for_each_surface(c, render, &rdata);
 	}
 }
@@ -1718,6 +1720,7 @@ renderlayer(struct wl_list *layer_surfaces, struct timespec *now)
 			.when = now,
 			.x = layersurface->geo.x,
 			.y = layersurface->geo.y,
+			.alpha = 1.0,
 		};
 
 		wlr_surface_for_each_surface(layersurface->layer_surface->surface,
@@ -2521,6 +2524,7 @@ renderindependents(struct wlr_output *output, struct timespec *now)
 		rdata.when = now;
 		rdata.x = c->surface.xwayland->x;
 		rdata.y = c->surface.xwayland->y;
+		rdata.alpha = 1.0;
 		wlr_surface_for_each_surface(c->surface.xwayland->surface, render, &rdata);
 	}
 }
